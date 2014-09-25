@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>A RefluxJS Based Rest Store &#8211; Code Bleg</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Routers and REST based stores for RefluxJS">
+    <meta name="author" content="Scotty Weeks">
+    <meta name="keywords" content="flux, react, javascript">
+    <link rel="canonical" href="http://weeksie.github.io/flux/react/javascript/2014/09/25/react-flux-new-front-end/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/pixyll.css" type="text/css">
+
+    <!-- Fonts -->
+    <link href='//fonts.googleapis.com/css?family=Merriweather:900,900italic,300,300italic' rel='stylesheet' type='text/css'>
+    <link href='//fonts.googleapis.com/css?family=Lato:900,300' rel='stylesheet' type='text/css'>
+</head>
+
+<body class="">
+  <div class="site-wrap">
+    <header class="site-header px2 px-responsive">
+  <div class="mt2 wrap">
+    <div class="measure">
+      <a href="http://weeksie.github.io" class="site-title">Code Bleg</a>
+      <nav class="site-nav right">
+        <a href="/about/">About</a>
+<a href="/contact/">Contact</a>
+
+      </nav>
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</header>
+
+
+    <div class="post p2 p-responsive wrap" role="main">
+      <div class="measure">
+        
+
+
+<div class="post-header mb2">
+  <h1 class="py2">A RefluxJS Based Rest Store</h1>
+  <span class="post-meta">Sep 25, 2014</span><br>
+  
+  <span class="post-meta small">4 minute read</span>
+</div>
+
+<article class="post-content">
+  <p>Kicking over some convention over configuration stuff, I’ve put together a rest based extension to <a href="https://github.com/spoike/refluxjs">RefluxJS</a> stores.</p>
+
+<p>This is how it works:</p>
+
+<div class="highlight"><pre><code class="language-coffeescript" data-lang="coffeescript"><span class="nx">RefluxRestStore</span><span class="p">.</span><span class="nx">createCollectionStore</span> <span class="s">&quot;TestStores.Chaos&quot;</span><span class="p">,</span>
+      <span class="nv">path: </span><span class="s">&quot;/api/{kallistiId}/chaos&quot;</span></code></pre></div>
+
+<p>This will automatically create a store called <code>TestStores.Chaos.CollectionStore</code> and the action <code>TestActions.Chaos.loadCollection</code>. invoking <code>loadCollection</code> will cause the store to trigger with the collection and its sideloaded data. An excerpt from the spex</p>
+
+<div class="highlight"><pre><code class="language-elixir" data-lang="elixir"><span class="n">it</span> <span class="s2">&quot;should listenTo the loadCollection and call it with the correct url&quot;</span><span class="p">,</span> <span class="p">-&gt;</span>
+    <span class="na">@server</span><span class="p">.</span><span class="n">respondWith</span> <span class="nc">JSON</span><span class="p">.</span><span class="n">stringify</span><span class="p">(</span><span class="nc">Mocks.CollectionResponse</span><span class="p">)</span>
+    <span class="n">listener</span> <span class="p">=</span> <span class="n">jasmine</span><span class="p">.</span><span class="n">createSpy</span> <span class="s2">&quot;collectionResponse&quot;</span>
+
+    <span class="nc">TestStores.Chaos.CollectionStore</span><span class="p">.</span><span class="n">listen</span> <span class="n">listener</span>
+    <span class="nc">TestActions.Chaos</span><span class="p">.</span><span class="n">loadCollection</span> <span class="ss">kallistiId</span><span class="p">:</span> <span class="s2">&quot;KALLISTI&quot;</span>
+
+    <span class="n">jasmine</span><span class="p">.</span><span class="nc">Clock</span><span class="p">.</span><span class="n">tick</span> <span class="mi">1</span>
+    <span class="na">@server</span><span class="p">.</span><span class="n">respond</span><span class="p">()</span>
+
+    <span class="n">expect</span><span class="p">(</span><span class="n">listener</span><span class="p">).</span><span class="n">toHaveBeenCalled</span><span class="p">()</span>
+    <span class="n">response</span> <span class="p">=</span> <span class="n">listener</span><span class="p">.</span><span class="n">mostRecentCall</span><span class="p">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">expect</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="n">loading</span><span class="p">).</span><span class="n">toBeFalsy</span><span class="p">()</span>
+    <span class="n">expect</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="n">isError</span><span class="p">).</span><span class="n">toBeFalsy</span><span class="p">()</span>
+    <span class="n">expect</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="n">newObjects</span><span class="p">.</span><span class="n">length</span><span class="p">).</span><span class="n">toEqual</span> <span class="nc">Mocks.CollectionResponse</span><span class="p">.</span><span class="n">chaos</span><span class="p">.</span><span class="n">length</span>
+    <span class="n">expect</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="n">newObjects</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">forum</span><span class="p">.</span><span class="n">id</span><span class="p">).</span><span class="n">toEqual</span> <span class="n">response</span><span class="p">.</span><span class="n">newObjects</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">forum_id</span></code></pre></div>
+
+<p>Similar stuff werks for the <code>createObjectStore</code> method. Here’s the source</p>
+
+<div class="highlight"><pre><code class="language-coffeescript" data-lang="coffeescript"><span class="nx">pkg</span> <span class="s">&quot;RefluxRestStore&quot;</span><span class="p">,</span> <span class="nf">-&gt;</span>
+  <span class="nv">_sideload = </span><span class="nf">(payload, resource) -&gt;</span>
+    <span class="nx">_</span><span class="p">.</span><span class="nx">each</span> <span class="nx">resource</span><span class="p">,</span> <span class="nf">(value, attribute) -&gt;</span>
+      <span class="k">if</span> <span class="nv">matched = </span><span class="nx">attribute</span><span class="p">.</span><span class="nx">match</span><span class="p">(</span><span class="sr">/(.+)_id$/</span><span class="p">)</span>
+        <span class="nx">resource</span><span class="p">[</span><span class="nx">matched</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="nx">_</span><span class="p">.</span><span class="nx">findWhere</span> <span class="nx">payload</span><span class="p">[</span><span class="nx">matched</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="nx">pluralize</span><span class="p">()],</span> <span class="nv">id: </span><span class="nx">resource</span><span class="p">[</span><span class="nx">attribute</span><span class="p">]</span>
+
+  <span class="nv">exports =</span>
+    <span class="nv">_createStore: </span><span class="nf">(kind, namespace, definition) -&gt;</span>
+      <span class="nx">pkg</span> <span class="s">&quot;</span><span class="si">#{</span><span class="nx">namespace</span><span class="si">}</span><span class="s">.</span><span class="si">#{</span><span class="nx">kind</span><span class="si">}</span><span class="s">Store&quot;</span><span class="p">,</span> <span class="nf">-&gt;</span>
+        <span class="nv">actionNamespace           = </span><span class="nx">namespace</span><span class="p">.</span><span class="nx">replace</span> <span class="sr">/Stores/</span><span class="p">,</span> <span class="s">&#39;Actions&#39;</span>
+        <span class="nv">resourceName              = </span><span class="nx">_</span><span class="p">.</span><span class="nx">str</span><span class="p">.</span><span class="nx">underscored</span> <span class="nx">_</span><span class="p">.</span><span class="nx">last</span><span class="p">(</span><span class="nx">actionNamespace</span><span class="p">.</span><span class="nx">split</span><span class="p">(</span><span class="s">&quot;.&quot;</span><span class="p">))</span>
+        <span class="nv">actionName                = </span><span class="s">&quot;load</span><span class="si">#{</span><span class="nx">kind</span><span class="si">}</span><span class="s">&quot;</span>
+        <span class="nv">actionPackage             = </span><span class="nx">getPkg</span> <span class="nx">actionNamespace</span>
+        <span class="nx">actionPackage</span><span class="p">[</span><span class="nx">actionName</span><span class="p">]</span> <span class="o">=</span> <span class="nx">Reflux</span><span class="p">.</span><span class="nx">createAction</span> <span class="nx">actionName</span>
+        <span class="nv">action                    = </span><span class="nx">actionPackage</span><span class="p">[</span><span class="s">&quot;load</span><span class="si">#{</span><span class="nx">kind</span><span class="si">}</span><span class="s">&quot;</span><span class="p">]</span>
+        <span class="nv">init                      = </span><span class="nx">definition</span><span class="p">.</span><span class="nx">init</span> <span class="o">||</span> <span class="p">(</span><span class="nf">-&gt;</span><span class="p">)</span>
+
+        <span class="nv">definition = </span><span class="nx">_</span><span class="p">.</span><span class="nx">extend</span> <span class="nx">definition</span><span class="p">,</span>
+          <span class="nv">init: </span><span class="nf">-&gt;</span>
+            <span class="vi">@resourceName = </span><span class="nx">resourceName</span>
+            <span class="nx">@listenTo</span> <span class="nx">action</span><span class="p">,</span> <span class="nx">@</span><span class="p">[</span><span class="s">&quot;onLoad</span><span class="si">#{</span><span class="nx">kind</span><span class="si">}</span><span class="s">&quot;</span><span class="p">].</span><span class="nx">bind</span><span class="p">(</span><span class="nx">@</span><span class="p">)</span>
+            <span class="nx">init</span><span class="p">.</span><span class="nx">call</span> <span class="k">this</span>
+
+        <span class="nx">Reflux</span><span class="p">.</span><span class="nx">createStore</span> <span class="nx">definition</span>
+
+    <span class="nv">createObjectStore: </span><span class="nf">(namespace, definition) -&gt;</span>
+      <span class="nx">@_createStore</span> <span class="s">&quot;Object&quot;</span><span class="p">,</span> <span class="nx">namespace</span><span class="p">,</span> <span class="nx">_</span><span class="p">.</span><span class="nx">extend</span> <span class="nx">definition</span><span class="p">,</span>
+        <span class="nv">onLoadObject: </span><span class="nf">(params) -&gt;</span>
+          <span class="nx">params</span> <span class="o">?=</span> <span class="p">{</span> <span class="p">}</span>
+          <span class="nv">url     = </span><span class="nx">pathForPattern</span> <span class="nx">@path</span><span class="p">,</span> <span class="nx">params</span>
+          <span class="nv">params  = </span><span class="nx">_</span><span class="p">.</span><span class="nx">omit</span> <span class="nx">params</span><span class="p">,</span> <span class="nx">pathKeys</span><span class="p">(</span><span class="nx">@path</span><span class="p">)</span>
+          <span class="nx">@trigger</span> <span class="nv">loading: </span><span class="kc">true</span>
+          <span class="nv">promise = </span><span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span>
+            <span class="nv">url: </span><span class="nx">url</span>
+            <span class="nv">data: </span><span class="nx">params</span>
+            <span class="nv">type: </span><span class="s">&#39;GET&#39;</span>
+            <span class="nv">dataType: </span><span class="s">&#39;json&#39;</span>
+
+          <span class="nx">promise</span><span class="p">.</span><span class="nx">success</span> <span class="nf">(payload) =&gt;</span>
+            <span class="nx">_sideload</span> <span class="nx">payload</span><span class="p">,</span> <span class="nx">payload</span><span class="p">[</span><span class="nx">@resourceName</span><span class="p">]</span>
+            <span class="nx">@trigger</span> <span class="nv">loading: </span><span class="kc">false</span><span class="p">,</span> <span class="nv">object: </span><span class="nx">payload</span><span class="p">[</span><span class="nx">@resourceName</span><span class="p">]</span>
+          <span class="nx">promise</span><span class="p">.</span><span class="nx">fail</span><span class="nf">(error) =&gt;</span>
+            <span class="nx">@trigger</span> <span class="nv">loading: </span><span class="kc">false</span><span class="p">,</span> <span class="nv">isError: </span><span class="kc">true</span><span class="p">,</span> <span class="nv">errors: </span><span class="nx">errors</span>
+
+    <span class="nv">createCollectionStore: </span><span class="nf">(namespace, definition) -&gt;</span>
+      <span class="nx">@_createStore</span> <span class="s">&quot;Collection&quot;</span><span class="p">,</span> <span class="nx">namespace</span><span class="p">,</span> <span class="nx">_</span><span class="p">.</span><span class="nx">extend</span> <span class="nx">definition</span><span class="p">,</span>
+          <span class="nv">onLoadCollection: </span><span class="nf">(params) -&gt;</span>
+            <span class="nx">params</span> <span class="o">?=</span> <span class="p">{</span> <span class="p">}</span>
+            <span class="nv">url     = </span><span class="nx">pathForPattern</span> <span class="nx">@path</span><span class="p">,</span> <span class="nx">params</span>
+            <span class="nv">params  = </span><span class="nx">_</span><span class="p">.</span><span class="nx">omit</span> <span class="nx">params</span><span class="p">,</span> <span class="nx">pathKeys</span><span class="p">(</span><span class="nx">@path</span><span class="p">)</span>
+
+            <span class="nx">@trigger</span> <span class="nv">loading: </span><span class="kc">true</span>
+            <span class="nv">promise = </span><span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span>
+              <span class="nv">url: </span><span class="nx">url</span>
+              <span class="nv">data: </span><span class="nx">params</span>
+              <span class="nv">type: </span><span class="s">&#39;GET&#39;</span>
+              <span class="nv">dataType: </span><span class="s">&#39;json&#39;</span>
+
+            <span class="nx">promise</span><span class="p">.</span><span class="nx">success</span> <span class="nf">(payload) =&gt;</span>
+              <span class="nx">_</span><span class="p">.</span><span class="nx">each</span> <span class="nx">payload</span><span class="p">[</span><span class="nx">@resourceName</span><span class="p">],</span> <span class="nf">(resource) =&gt;</span>
+                <span class="nx">_sideload</span> <span class="nx">payload</span><span class="p">,</span> <span class="nx">resource</span>
+              <span class="nx">@trigger</span> <span class="nv">loading: </span><span class="kc">false</span><span class="p">,</span> <span class="nv">newObjects: </span><span class="nx">payload</span><span class="p">[</span><span class="nx">@resourceName</span><span class="p">]</span>
+
+            <span class="nx">promise</span><span class="p">.</span><span class="nx">fail</span> <span class="nf">(errors) =&gt;</span>
+              <span class="nx">@trigger</span> <span class="nv">loading: </span><span class="kc">false</span><span class="p">,</span> <span class="nv">isError: </span><span class="kc">true</span><span class="p">,</span> <span class="nv">errors: </span><span class="nx">errors</span></code></pre></div>
+
+
+</article>
+
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+  <div class="p2 wrap">
+    <div class="measure mt1 center">
+      <small>
+        Crafted with &lt;3 by <a href="http://johnotander.com">John Otander</a> (<a href="https://twitter.com/4lpine">@4lpine</a>).<br>
+        &lt;/&gt; available on <a href="https://github.com/johnotander/pixyll.git">Github</a>.
+      </small>
+    </div>
+  </div>
+</footer>
+
+
+
+</body>
+</html>

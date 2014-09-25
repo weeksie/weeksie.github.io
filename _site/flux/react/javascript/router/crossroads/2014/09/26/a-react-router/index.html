@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>A simple router for Reflux and ReactJS &#8211; Code Bleg</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Routers and REST based stores for RefluxJS">
+    <meta name="author" content="Scotty Weeks">
+    <meta name="keywords" content="flux, react, javascript, router, crossroads">
+    <link rel="canonical" href="http://weeksie.github.io/flux/react/javascript/router/crossroads/2014/09/26/a-react-router/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/pixyll.css" type="text/css">
+
+    <!-- Fonts -->
+    <link href='//fonts.googleapis.com/css?family=Merriweather:900,900italic,300,300italic' rel='stylesheet' type='text/css'>
+    <link href='//fonts.googleapis.com/css?family=Lato:900,300' rel='stylesheet' type='text/css'>
+</head>
+
+<body class="">
+  <div class="site-wrap">
+    <header class="site-header px2 px-responsive">
+  <div class="mt2 wrap">
+    <div class="measure">
+      <a href="http://weeksie.github.io" class="site-title">Code Bleg</a>
+      <nav class="site-nav right">
+        <a href="/about/">About</a>
+<a href="/contact/">Contact</a>
+
+      </nav>
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</header>
+
+
+    <div class="post p2 p-responsive wrap" role="main">
+      <div class="measure">
+        
+
+
+<div class="post-header mb2">
+  <h1 class="py2">A simple router for Reflux and ReactJS</h1>
+  <span class="post-meta">Sep 26, 2014</span><br>
+  
+  <span class="post-meta small">5 minute read</span>
+</div>
+
+<article class="post-content">
+  <p>So I’ve been experimenting with RefluxJS. React is purely a view component and Reflux uses the Flux pattern outlined by Facebook for building React applications. Obviously for a single page site, a router is nice to have. Here’s a barebones router that’s backed by crossroads.</p>
+
+<div class="highlight"><pre><code class="language-coffeescript" data-lang="coffeescript"><span class="nx">pkg</span> <span class="s">&quot;Router&quot;</span><span class="p">,</span> <span class="nf">-&gt;</span>
+  <span class="k">class</span> <span class="nx">Router</span>
+    <span class="c1"># TODO: interpolate this</span>
+    <span class="nv">pageNamespace: </span><span class="s">&quot;Components&quot;</span>
+    <span class="nx">constructor</span><span class="o">:</span><span class="nf">(options) -&gt;</span>
+      <span class="vi">@routes = </span><span class="p">{</span> <span class="p">}</span>
+      <span class="nx">_</span><span class="p">(</span><span class="nx">options</span><span class="p">).</span><span class="nx">each</span> <span class="nf">(v, k) =&gt;</span>
+        <span class="nx">@</span><span class="p">[</span><span class="nx">k</span><span class="p">]</span> <span class="o">=</span> <span class="nx">v</span>
+
+    <span class="nv">reset: </span><span class="nf">-&gt;</span>
+      <span class="vi">@routes = </span><span class="p">{</span> <span class="p">}</span>
+      <span class="nx">crossroads</span><span class="p">.</span><span class="nx">removeAllRoutes</span><span class="p">()</span>
+
+    <span class="nx">draw</span><span class="o">:</span><span class="nf">(mappingFunction) -&gt;</span>
+      <span class="nx">mappingFunction</span><span class="p">.</span><span class="nx">call</span> <span class="nx">@</span>
+
+    <span class="nv">resource: </span><span class="nf">(resource, rest...) -&gt;</span>
+      <span class="nv">arg2 = </span><span class="nx">rest</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+      <span class="nv">arg3 = </span><span class="nx">rest</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+      <span class="k">if</span> <span class="nx">_</span><span class="p">.</span><span class="nx">isFunction</span> <span class="nx">arg2</span>
+        <span class="nv">childF  = </span><span class="nx">arg2</span>
+        <span class="nv">options = </span><span class="p">{</span> <span class="p">}</span>
+      <span class="k">else</span> <span class="k">if</span> <span class="nx">_</span><span class="p">.</span><span class="nx">isFunction</span> <span class="nx">arg3</span>
+        <span class="nv">childF  = </span><span class="nx">arg3</span>
+        <span class="nv">options = </span><span class="nx">arg2</span>
+      <span class="k">else</span> <span class="k">if</span> <span class="nx">_</span><span class="p">.</span><span class="nx">isObject</span> <span class="nx">arg2</span>
+        <span class="nv">options = </span><span class="nx">arg2</span>
+      <span class="k">else</span>
+        <span class="nv">options = </span><span class="p">{</span> <span class="p">}</span>
+
+      <span class="vi">@routes = </span><span class="nx">_</span><span class="p">.</span><span class="nx">extend</span> <span class="nx">@routes</span><span class="p">,</span> <span class="nx">@_generateRoutes</span> <span class="nx">resource</span><span class="p">,</span> <span class="nx">options</span><span class="p">,</span> <span class="nx">childF</span>
+
+    <span class="nv">_generateRoutes: </span><span class="nf">(resource, options, childF) -&gt;</span>
+      <span class="nv">segments  = </span><span class="nx">_</span> <span class="nx">resource</span><span class="p">.</span><span class="nx">split</span> <span class="s">&quot;.&quot;</span>
+      <span class="nv">routes    = </span><span class="p">{</span> <span class="p">}</span>
+      <span class="nv">basePath  = </span><span class="nx">options</span><span class="p">.</span><span class="nx">path</span> <span class="o">?</span> <span class="nx">@_segmentsToPath</span><span class="p">(</span><span class="nx">segments</span><span class="p">)</span>
+      <span class="nv">basePath  = </span><span class="k">if</span> <span class="nx">@context</span><span class="o">?</span> <span class="k">then</span> <span class="s">&quot;</span><span class="si">#{</span><span class="nx">@context</span><span class="si">}#{</span><span class="nx">basePath</span><span class="si">}</span><span class="s">&quot;</span> <span class="k">else</span> <span class="nx">basePath</span>
+
+      <span class="p">[</span> <span class="s">&quot;index&quot;</span><span class="p">,</span> <span class="s">&quot;show&quot;</span><span class="p">,</span> <span class="s">&quot;edit&quot;</span> <span class="p">].</span><span class="nx">forEach</span> <span class="nf">(route) =&gt;</span>
+        <span class="nv">isIndex        = </span><span class="nx">route</span> <span class="o">==</span> <span class="s">&quot;index&quot;</span>
+        <span class="nv">token          = </span><span class="k">if</span> <span class="nx">isIndex</span> <span class="k">then</span> <span class="nx">resource</span> <span class="k">else</span> <span class="s">&quot;</span><span class="si">#{</span><span class="nx">resource</span><span class="si">}</span><span class="s">.</span><span class="si">#{</span><span class="nx">route</span><span class="si">}</span><span class="s">&quot;</span>
+        <span class="nv">routeSegments  = </span><span class="nx">segments</span><span class="p">.</span><span class="nx">concat</span> <span class="nx">route</span>
+
+        <span class="k">switch</span> <span class="nx">route</span>
+          <span class="k">when</span> <span class="s">&quot;index&quot;</span> <span class="k">then</span> <span class="nv">pattern = </span><span class="nx">basePath</span>
+          <span class="k">when</span> <span class="s">&quot;show&quot;</span>  <span class="k">then</span> <span class="nv">pattern = </span><span class="s">&quot;</span><span class="si">#{</span><span class="nx">basePath</span><span class="si">}</span><span class="s">/{id}&quot;</span>
+          <span class="k">when</span> <span class="s">&quot;edit&quot;</span>  <span class="k">then</span> <span class="nv">pattern = </span><span class="s">&quot;</span><span class="si">#{</span><span class="nx">basePath</span><span class="si">}</span><span class="s">/{id}/edit&quot;</span>
+
+
+        <span class="nx">routes</span><span class="p">[</span><span class="nx">token</span><span class="p">]</span> <span class="o">=</span>
+          <span class="nv">page: </span><span class="nx">@_segmentsToComponent</span> <span class="nx">routeSegments</span>
+          <span class="nv">path: </span><span class="nx">pattern</span>
+          <span class="nv">route: </span><span class="nx">crossroads</span><span class="p">.</span><span class="nx">addRoute</span> <span class="nx">pattern</span><span class="p">,</span> <span class="nf">(args...) -&gt;</span>
+            <span class="nx">Actions</span><span class="p">.</span><span class="nx">Routes</span><span class="p">.</span><span class="nx">navigate</span> <span class="nx">routes</span><span class="p">[</span><span class="nx">token</span><span class="p">],</span> <span class="nx">args</span>
+
+      <span class="k">if</span> <span class="nx">childF</span>
+        <span class="nv">childRouter = </span><span class="k">new</span> <span class="nx">Router</span><span class="p">(</span><span class="nv">context: </span><span class="s">&quot;</span><span class="si">#{</span><span class="nx">basePath</span><span class="si">}</span><span class="s">/{</span><span class="si">#{</span><span class="nx">resource</span><span class="si">}</span><span class="s">Id}&quot;</span><span class="p">,</span> <span class="nv">pageNamespace: </span><span class="nx">@pageNamespace</span><span class="p">)</span>
+        <span class="nx">childF</span><span class="p">.</span><span class="nx">call</span> <span class="nx">childRouter</span>
+        <span class="nx">_</span><span class="p">.</span><span class="nx">each</span> <span class="nx">childRouter</span><span class="p">.</span><span class="nx">routes</span><span class="p">,</span> <span class="nf">(value, tok) -&gt;</span>
+          <span class="nx">routes</span><span class="p">[</span><span class="s">&quot;</span><span class="si">#{</span><span class="nx">resource</span><span class="si">}</span><span class="s">.</span><span class="si">#{</span><span class="nx">tok</span><span class="si">}</span><span class="s">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nx">value</span>
+
+      <span class="nx">routes</span>
+
+    <span class="nv">_segmentsToComponent: </span><span class="nf">(segments) -&gt;</span>
+      <span class="nx">segments</span><span class="p">.</span><span class="nx">reduce</span> <span class="p">(</span><span class="nf">(acc, segment) =&gt;</span>
+        <span class="nx">acc</span><span class="p">[</span><span class="nx">_</span><span class="p">.</span><span class="nx">str</span><span class="p">.</span><span class="nx">capitalize</span><span class="p">(</span><span class="nx">segment</span><span class="p">)]</span>
+      <span class="p">),</span> <span class="nb">window</span><span class="p">[</span><span class="nx">@pageNamespace</span><span class="p">]</span>
+
+    <span class="nv">_segmentsToPath: </span><span class="nf">(segments) -&gt;</span>
+      <span class="nv">dasherized = </span><span class="nx">segments</span><span class="p">.</span><span class="nx">map</span> <span class="nf">(segment) -&gt;</span> <span class="nx">_</span><span class="p">.</span><span class="nx">str</span><span class="p">.</span><span class="nx">dasherize</span><span class="p">(</span><span class="nx">segment</span><span class="p">)</span>
+      <span class="s">&quot;/</span><span class="si">#{</span><span class="nx">dasherized</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s">&#39;/&#39;</span></code></pre></div>
+
+<p>The unit test to explain it:</p>
+
+<div class="highlight"><pre><code class="language-coffeescript" data-lang="coffeescript"><span class="nx">describe</span> <span class="s">&quot;Router&quot;</span><span class="p">,</span> <span class="nf">-&gt;</span>
+  <span class="nx">beforeEach</span> <span class="nf">-&gt;</span>
+    <span class="nv">container = </span><span class="nb">document</span><span class="p">.</span><span class="nx">createElement</span> <span class="s">&#39;div&#39;</span>
+    <span class="nx">container</span><span class="p">.</span><span class="nx">setAttribute</span> <span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="s">&#39;app-root&#39;</span>
+    <span class="nb">document</span><span class="p">.</span><span class="nx">documentElement</span><span class="p">.</span><span class="nx">appendChild</span> <span class="nx">container</span>
+    <span class="vi">@router = </span><span class="k">new</span> <span class="nx">Router</span><span class="p">(</span><span class="nv">pageNamespace: </span><span class="s">&quot;MockComponents&quot;</span><span class="p">)</span>
+    <span class="nb">window</span><span class="p">.</span><span class="nv">MockComponents =</span>
+      <span class="nv">ChaosMachines:</span>
+        <span class="nv">Index: </span><span class="s">&quot;ChaosMachines.Index&quot;</span>
+        <span class="nv">Show: </span><span class="s">&quot;ChaosMachines.Show&quot;</span>
+        <span class="nv">Edit: </span><span class="s">&quot;ChaosMachines.Edit&quot;</span>
+
+      <span class="nv">Kallisti:</span>
+        <span class="nv">Index: </span><span class="s">&quot;Kallisti.Index&quot;</span>
+        <span class="nv">Show: </span><span class="s">&quot;Kallisti.Show&quot;</span>
+
+      <span class="nv">Eris:</span>
+        <span class="nv">Index: </span><span class="s">&quot;Eris.Index&quot;</span>
+      <span class="nv">GoldenApple:</span>
+        <span class="nv">Index: </span><span class="s">&quot;GoldenApple.Index&quot;</span>
+
+  <span class="nx">afterEach</span> <span class="nf">-&gt;</span>
+    <span class="nv">container = </span><span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span> <span class="s">&#39;app-root&#39;</span>
+    <span class="nx">container</span><span class="p">.</span><span class="nx">parentNode</span><span class="p">.</span><span class="nx">removeChild</span> <span class="nx">container</span>
+    <span class="nx">@router</span><span class="p">.</span><span class="nx">reset</span><span class="p">()</span>
+
+  <span class="nx">it</span> <span class="s">&quot;should generate resource routes&quot;</span><span class="p">,</span> <span class="nf">-&gt;</span>
+    <span class="nx">@router</span><span class="p">.</span><span class="nx">draw</span> <span class="nf">-&gt;</span>
+      <span class="nx">@resource</span> <span class="s">&quot;chaosMachines&quot;</span>
+
+    <span class="nx">expect</span><span class="p">(</span><span class="nx">@router</span><span class="p">.</span><span class="nx">routes</span><span class="p">[</span><span class="s">&quot;chaosMachines&quot;</span><span class="p">].</span><span class="nx">page</span><span class="p">).</span><span class="nx">toEqual</span> <span class="nx">MockComponents</span><span class="p">.</span><span class="nx">ChaosMachines</span><span class="p">.</span><span class="nx">Index</span>
+    <span class="nx">expect</span><span class="p">(</span><span class="nx">@router</span><span class="p">.</span><span class="nx">routes</span><span class="p">[</span><span class="s">&quot;chaosMachines.show&quot;</span><span class="p">].</span><span class="nx">page</span><span class="p">).</span><span class="nx">toEqual</span> <span class="nx">MockComponents</span><span class="p">.</span><span class="nx">ChaosMachines</span><span class="p">.</span><span class="nx">Show</span>
+    <span class="nx">expect</span><span class="p">(</span><span class="nx">@router</span><span class="p">.</span><span class="nx">routes</span><span class="p">[</span><span class="s">&quot;chaosMachines.edit&quot;</span><span class="p">].</span><span class="nx">page</span><span class="p">).</span><span class="nx">toEqual</span> <span class="nx">MockComponents</span><span class="p">.</span><span class="nx">ChaosMachines</span><span class="p">.</span><span class="nx">Edit</span>
+    <span class="nx">expect</span><span class="p">(</span><span class="nx">@router</span><span class="p">.</span><span class="nx">routes</span><span class="p">[</span><span class="s">&quot;chaosMachines&quot;</span><span class="p">].</span><span class="nx">path</span><span class="p">).</span><span class="nx">toEqual</span> <span class="s">&quot;/chaos-machines&quot;</span>
+    <span class="nx">expect</span><span class="p">(</span><span class="nx">@router</span><span class="p">.</span><span class="nx">routes</span><span class="p">[</span><span class="s">&quot;chaosMachines.show&quot;</span><span class="p">].</span><span class="nx">path</span><span class="p">).</span><span class="nx">toEqual</span> <span class="s">&quot;/chaos-machines/{id}&quot;</span>
+    <span class="nx">expect</span><span class="p">(</span><span class="nx">@router</span><span class="p">.</span><span class="nx">routes</span><span class="p">[</span><span class="s">&quot;chaosMachines.edit&quot;</span><span class="p">].</span><span class="nx">path</span><span class="p">).</span><span class="nx">toEqual</span> <span class="s">&quot;/chaos-machines/{id}/edit&quot;</span>
+
+  <span class="nx">it</span> <span class="s">&quot;should generate nested routes&quot;</span><span class="p">,</span> <span class="nf">-&gt;</span>
+    <span class="nx">@router</span><span class="p">.</span><span class="nx">draw</span> <span class="nf">-&gt;</span>
+      <span class="nx">@resource</span> <span class="s">&quot;chaosMachines&quot;</span><span class="p">,</span> <span class="nf">-&gt;</span>
+        <span class="nx">@resource</span> <span class="s">&quot;kallisti&quot;</span><span class="p">,</span> <span class="nf">-&gt;</span>
+          <span class="nx">@resource</span> <span class="s">&quot;goldenApple&quot;</span>
+          <span class="nx">@resource</span> <span class="s">&quot;eris&quot;</span>
+
+    <span class="nx">expect</span><span class="p">(</span><span class="nx">@router</span><span class="p">.</span><span class="nx">routes</span><span class="p">[</span><span class="s">&quot;chaosMachines.kallisti&quot;</span><span class="p">].</span><span class="nx">path</span><span class="p">).</span>
+      <span class="nx">toEqual</span> <span class="s">&quot;/chaos-machines/{chaosMachinesId}/kallisti&quot;</span>
+
+    <span class="nx">expect</span><span class="p">(</span><span class="nx">@router</span><span class="p">.</span><span class="nx">routes</span><span class="p">[</span><span class="s">&quot;chaosMachines.kallisti.goldenApple&quot;</span><span class="p">].</span><span class="nx">path</span><span class="p">).</span>
+      <span class="nx">toEqual</span> <span class="s">&quot;/chaos-machines/{chaosMachinesId}/kallisti/{kallistiId}/golden-apple&quot;</span>
+
+    <span class="nx">expect</span><span class="p">(</span><span class="nx">@router</span><span class="p">.</span><span class="nx">routes</span><span class="p">[</span><span class="s">&quot;chaosMachines.kallisti.eris&quot;</span><span class="p">].</span><span class="nx">path</span><span class="p">).</span>
+      <span class="nx">toEqual</span> <span class="s">&quot;/chaos-machines/{chaosMachinesId}/kallisti/{kallistiId}/eris&quot;</span>
+
+  <span class="nx">it</span> <span class="s">&quot;should take options&quot;</span><span class="p">,</span> <span class="nf">-&gt;</span>
+    <span class="nx">@router</span><span class="p">.</span><span class="nx">draw</span> <span class="nf">-&gt;</span>
+      <span class="nx">@resource</span> <span class="s">&quot;chaosMachines&quot;</span><span class="p">,</span> <span class="nv">path: </span><span class="s">&quot;/fnord&quot;</span>
+
+    <span class="nx">expect</span><span class="p">(</span><span class="nx">@router</span><span class="p">.</span><span class="nx">routes</span><span class="p">[</span><span class="s">&quot;chaosMachines&quot;</span><span class="p">].</span><span class="nx">path</span><span class="p">).</span><span class="nx">toEqual</span> <span class="s">&#39;/fnord&#39;</span>
+    <span class="nx">expect</span><span class="p">(</span><span class="nx">@router</span><span class="p">.</span><span class="nx">routes</span><span class="p">[</span><span class="s">&quot;chaosMachines.show&quot;</span><span class="p">].</span><span class="nx">path</span><span class="p">).</span><span class="nx">toEqual</span> <span class="s">&#39;/fnord/{id}&#39;</span>
+    <span class="nx">expect</span><span class="p">(</span><span class="nx">@router</span><span class="p">.</span><span class="nx">routes</span><span class="p">[</span><span class="s">&quot;chaosMachines.edit&quot;</span><span class="p">].</span><span class="nx">path</span><span class="p">).</span><span class="nx">toEqual</span> <span class="s">&#39;/fnord/{id}/edit&#39;</span></code></pre></div>
+
+<p>I plan on bundling it into a repo when I get time.</p>
+
+</article>
+
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+  <div class="p2 wrap">
+    <div class="measure mt1 center">
+      <small>
+        Crafted with &lt;3 by <a href="http://johnotander.com">John Otander</a> (<a href="https://twitter.com/4lpine">@4lpine</a>).<br>
+        &lt;/&gt; available on <a href="https://github.com/johnotander/pixyll.git">Github</a>.
+      </small>
+    </div>
+  </div>
+</footer>
+
+
+
+</body>
+</html>

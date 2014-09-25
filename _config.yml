@@ -1,0 +1,16 @@
+# Site settings
+title: Code Bleg
+email: scott.weeksl@gmail.com
+author: Scotty Weeks
+description: "Wherein I vomit up some code from time to time."
+baseurl: ""
+url: "http://weeksie.github.io"
+google_analytics:
+animated: false
+
+# Build settings
+markdown: kramdown
+permalink: pretty
+paginate: 3
+sass:
+  compressed: true
